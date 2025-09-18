@@ -397,8 +397,124 @@ ggplot(data = mpg) +
 ```
 
 2.25 Plot deconstruction
+```{r}
+library(ggplot2)
+library(dplyr)
 
+# Data (cleaned and all in millions for consistency)
+ads_data <- data.frame(
+  category = c("Abusing the ad network", "Trademark", "Personalized ads", 
+               "Financial services", "Legal requirements", "Misrepresentation", 
+               "Gambling and games", "Adult content", "Healthcare and medicines", 
+               "Copyright", "Inappropriate content", "Misinformation", 
+               "Enabling dishonest behavior", "Alcohol", 
+               "Dangerous products/services", "Counterfeit goods", "Sensitive events"),
+  ads_million = c(1040, 548.2, 372, 273.4, 209.5, 206.5, 192.7, 94.6, 
+                  80.5, 65.4, 39.6, 30, 19.8, 9.2, 8.1, 2.1, 1.6)
+)
 
+# Order categories by descending ads_million
+ads_data <- ads_data %>%
+  arrange(desc(ads_million))
+
+# Plot
+ggplot(ads_data, aes(x = reorder(category, ads_million), y = ads_million)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Number of Ads Blocked or Removed in 2023",
+    x = NULL,
+    y = "Ads blocked/removed (millions)"
+  ) +
+  theme_minimal(base_size = 12)
+```
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Original data
+ads_data <- data.frame(
+  category = c("Abusing the ad network", "Trademark", "Personalized ads", 
+               "Financial services", "Legal requirements", "Misrepresentation", 
+               "Gambling and games", "Adult content", "Healthcare and medicines", 
+               "Copyright", "Inappropriate content", "Misinformation", 
+               "Enabling dishonest behavior", "Alcohol", 
+               "Dangerous products/services", "Counterfeit goods", "Sensitive events"),
+  ads_million = c(1040, 548.2, 372, 273.4, 209.5, 206.5, 192.7, 94.6, 
+                  80.5, 65.4, 39.6, 30, 19.8, 9.2, 8.1, 2.1, 1.6)
+)
+
+# Group categories
+ads_grouped <- ads_data %>%
+  mutate(group = case_when(
+    category %in% c("Misrepresentation", "Enabling dishonest behavior", 
+                    "Misinformation", "Inappropriate content") ~ "Content/Dishonesty",
+    category %in% c("Financial services", "Healthcare and medicines", 
+                    "Gambling and games", "Alcohol", "Dangerous products/services", 
+                    "Counterfeit goods") ~ "Products/Services",
+    category %in% c("Trademark", "Copyright", "Legal requirements") ~ "Legal/IP",
+    category %in% c("Adult content", "Sensitive events") ~ "Sensitive/Adult",
+    category %in% c("Personalized ads") ~ "Personalized ads",
+    category %in% c("Abusing the ad network") ~ "Ad network abuse",
+    TRUE ~ "Other"
+  )) %>%
+  group_by(group) %>%
+  summarise(total_ads = sum(ads_million)) %>%
+  arrange(desc(total_ads))
+
+# Okabe–Ito color palette (8 colors, color-blind safe)
+okabe_ito <- c("#E69F00", "#56B4E9", "#009E73", 
+               "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# Plot with color-blind friendly palette
+ggplot(ads_grouped, aes(x = reorder(group, total_ads), y = total_ads, fill = group)) +
+  geom_col() +
+  scale_fill_manual(values = okabe_ito) +
+  coord_flip() +
+  labs(
+    title = "Number of Ads Blocked or Removed in 2023 (Grouped Categories)",
+    x = NULL,
+    y = "Ads blocked/removed (millions)",
+    fill = "Policy group"
+  ) +
+  theme_minimal(base_size = 12)
+
+```
+```{r}
+library(ggplot2)
+library(dplyr)
+library(viridis)
+
+# Original data (all in millions for consistency)
+ads_data <- data.frame(
+  category = c("Abusing the ad network", "Trademark", "Personalized ads", 
+               "Financial services", "Legal requirements", "Misrepresentation", 
+               "Gambling and games", "Adult content", "Healthcare and medicines", 
+               "Copyright", "Inappropriate content", "Misinformation", 
+               "Enabling dishonest behavior", "Alcohol", 
+               "Dangerous products/services", "Counterfeit goods", "Sensitive events"),
+  ads_million = c(1040, 548.2, 372, 273.4, 209.5, 206.5, 192.7, 94.6, 
+                  80.5, 65.4, 39.6, 30, 19.8, 9.2, 8.1, 2.1, 1.6)
+)
+
+# Sort categories by value
+ads_data <- ads_data %>%
+  arrange(desc(ads_million))
+
+# Plot with viridis gradient
+ggplot(ads_data, aes(x = reorder(category, ads_million), y = ads_million, fill = ads_million)) +
+  geom_col() +
+  scale_fill_viridis(option = "plasma", direction = -1) +  # options: "viridis", "magma", "cividis", "plasma"
+  coord_flip() +
+  labs(
+    title = "Number of Ads Blocked or Removed in 2023",
+    x = NULL,
+    y = "Ads blocked/removed (millions)",
+    fill = "Ads (millions)"
+  ) +
+  theme_minimal(base_size = 12)
+
+```
 
 
 -----Workshop 2------
@@ -552,5 +668,445 @@ ggplot(df, aes(x, y)) +
 ```
 3.10 Assignment End-to-end data analysis in R
 
+------------------------------
+Workshop 3: Data wrangling in r
+```{r}
+library(tidyverse)
+
+table1
+#> # A tibble: 6 × 4
+#>   country      year  cases population
+#>   <chr>       <int>  <int>      <int>
+#> 1 Afghanistan  1999    745   19987071
+#> 2 Afghanistan  2000   2666   20595360
+#> 3 Brazil       1999  37737  172006362
+#> 4 Brazil       2000  80488  174504898
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+table2
+#> # A tibble: 12 × 4
+#>   country      year type           count
+#>   <chr>       <int> <chr>          <int>
+#> 1 Afghanistan  1999 cases            745
+#> 2 Afghanistan  1999 population  19987071
+#> 3 Afghanistan  2000 cases           2666
+#> 4 Afghanistan  2000 population  20595360
+#> 5 Brazil       1999 cases          37737
+#> 6 Brazil       1999 population 172006362
+#> # ... with 6 more rows
+table3
+#> # A tibble: 6 × 3
+#>   country      year rate             
+#> * <chr>       <int> <chr>            
+#> 1 Afghanistan  1999 745/19987071     
+#> 2 Afghanistan  2000 2666/20595360    
+#> 3 Brazil       1999 37737/172006362  
+#> 4 Brazil       2000 80488/174504898  
+#> 5 China        1999 212258/1272915272
+#> 6 China        2000 213766/1280428583
+
+
+
+```
+```{r}
+# Compute rate per 10,000
+table1 %>% 
+  mutate(rate = cases / population * 10000)
+#> # A tibble: 6 × 5
+#>   country      year  cases population  rate
+#>   <chr>       <int>  <int>      <int> <dbl>
+#> 1 Afghanistan  1999    745   19987071 0.373
+#> 2 Afghanistan  2000   2666   20595360 1.29 
+#> 3 Brazil       1999  37737  172006362 2.19 
+#> 4 Brazil       2000  80488  174504898 5.61 
+#> 5 China        1999 212258 1272915272 1.67 
+#> 6 China        2000 213766 1280428583 1.67
+
+# Compute cases per year
+table1 %>% 
+  count(year, wt = cases)
+#> # A tibble: 2 × 2
+#>    year      n
+#>   <int>  <int>
+#> 1  1999 250740
+#> 2  2000 296920
+
+# Visualise changes over time
+library(ggplot2)
+ggplot(table1, aes(year, cases)) + 
+  geom_line(aes(group = country), colour = "grey50") + 
+  geom_point(aes(colour = country))
+
+```
+4.4.1 Exercise 
+What each column and observaton represents:
+table 1= a country- year combination. Columns: name of country, year of observation, number of TB cases, population of the country in that year.
+
+table 2= a single measurement for a given country-year. Columns: name of the country, year of observation, type of measurement (cases or population), value of the measurement.
+
+table 3= a country-year combination. Columns: name of the country, year of observation, rate of TB cases per population (as a string).
+
+calculating the rate= (cases/population)*10000
+table 2: requires reshaping from long to wide before calculating
+steps: extract number of TB cases, extract the matching population, bring them together, calculate rate, store result
+table 3: requires separating the rate column into cases and population before calculating
+
+```{r}
+billboard
+#> # A tibble: 317 × 79
+#>   artist       track               date.entered   wk1   wk2   wk3   wk4   wk5
+#>   <chr>        <chr>               <date>       <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 2 Pac        Baby Don't Cry (Ke... 2000-02-26      87    82    72    77    87
+#> 2 2Ge+her      The Hardest Part O... 2000-09-02      91    87    92    NA    NA
+#> 3 3 Doors Down Kryptonite          2000-04-08      81    70    68    67    66
+#> 4 3 Doors Down Loser               2000-10-21      76    76    72    69    67
+#> 5 504 Boyz     Wobble Wobble       2000-04-15      57    34    25    17    17
+#> 6 98^0         Give Me Just One N... 2000-08-19      51    39    34    26    26
+#> # ℹ 311 more rows
+#> # ℹ 71 more variables: wk6 <dbl>, wk7 <dbl>, wk8 <dbl>, wk9 <dbl>, ...
+
+
+```
+```{r}
+billboard |> 
+  pivot_longer(
+    cols = starts_with("wk"), 
+    names_to = "week", 
+    values_to = "rank",
+    values_drop_na = TRUE
+  )
+#> # A tibble: 5,307 × 5
+#>   artist track                   date.entered week   rank
+#>   <chr>  <chr>                   <date>       <chr> <dbl>
+#> 1 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk1      87
+#> 2 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk2      82
+#> 3 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk3      72
+#> 4 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk4      77
+#> 5 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk5      87
+#> 6 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk6      94
+#> # ℹ 5,301 more rows
+
+
+```
+```{r}
+df <- tribble(
+  ~id,  ~bp1, ~bp2,
+   "A",  100,  120,
+   "B",  140,  115,
+   "C",  120,  125
+)
+
+
+```
+
+```{r}
+df |> 
+  pivot_longer(
+    cols = bp1:bp2,
+    names_to = "measurement",
+    values_to = "value"
+  )
+#> # A tibble: 6 × 3
+#>   id    measurement value
+#>   <chr> <chr>       <dbl>
+#> 1 A     bp1           100
+#> 2 A     bp2           120
+#> 3 B     bp1           140
+#> 4 B     bp2           115
+#> 5 C     bp1           120
+#> 6 C     bp2           125
+
+
+```
+```{r}
+cms_patient_experience |> 
+  pivot_wider(
+    id_cols = starts_with("org"),
+    names_from = measure_cd,
+    values_from = prf_rate
+  )
+```
+Above code used data from Centers of Medicare and Medicaid
+
+Pivotting wider
+```{r}
+df <- tribble(
+  ~id, ~measurement, ~value,
+  "A",        "bp1",    100,
+  "B",        "bp1",    140,
+  "B",        "bp2",    115, 
+  "A",        "bp2",    120,
+  "A",        "bp3",    105
+)
+
+df |> 
+  pivot_wider(
+    names_from = measurement,
+    values_from = value
+  )
+
+```
+```{r}
+df |> 
+  distinct(measurement) |> 
+  pull() 
+```
+4.5.5 Exercies
+1. Pivot longer and pivot wider aren't perfectly symmetrical because when the values are turned into column names, they get stored as strings and R doesnt automatically know you want them back to numbers.
+2. Name ptypes lets you control the type of the new colums created from column names. 
+```{r}
+table4a %>% 
+  pivot_longer(c(1999, 2000), names_to = "year", values_to = "cases")
+
+```
+This code gauls because it's treating 1999 and 2000 as column positions, not names. Fix: 
+```{r}
+table4a %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "cases")
+
+```
+4. Preg data
+```{r}
+preg <- tribble(
+  ~pregnant, ~male, ~female,
+  "yes",     NA,    10,
+  "no",      20,    12
+)
+
+```
+variables: whether someone is pregnant, male of female, number of people. to make it longer:
+```{r}
+preg %>%
+  pivot_longer(cols = c(male, female), 
+               names_to = "sex", 
+               values_to = "count")
+
+```
+4.5.6
+```{r}
+table3
+
+```
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"))
+```
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"), sep = "/")
+
+
+```
+```{r}
+table3 %>% 
+  separate(year, into = c("century", "year"), sep = 2)
+```
+```{r}
+table5 %>% 
+  unite(new, century, year, sep = "")
+```
+4.6
+```{r}
+treatment <- tribble(
+  ~person,           ~treatment, ~response,
+  "Derrick Whitmore", 1,         7,
+  NA,                 2,         10,
+  NA,                 3,         NA,
+  "Katherine Burke",  1,         4
+)
+
+treatment |>
+  fill(everything())
+```
+```{r}
+x <- c(1, 4, 5, 7, NA)
+coalesce(x, 0)
+
+```
+```{r}
+x <- c(1, 4, 5, 7, -99)
+na_if(x, -99)
+```
+NaN
+```{r}
+x <- c(NA, NaN)
+x * 10
+#> [1]  NA NaN
+x == 1
+#> [1] NA NA
+is.na(x)
+#> [1] TRUE TRUE
+
+stocks <- tibble(
+  year  = c(2020, 2020, 2020, 2020, 2021, 2021, 2021),
+  qtr   = c(   1,    2,    3,    4,    2,    3,    4),
+  price = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+
+stocks |>
+  pivot_wider(
+    names_from = qtr, 
+    values_from = price
+  )
+
+```
+```{r}
+? read_csv
+students <- read_csv("https://pos.it/r4ds-students-csv")
+
+
+```
+```{r}
+students
+```
+```{r}
+students |> 
+  rename(
+    student_id = `Student ID`,
+    full_name = `Full Name`
+  )
+
+```
+4.7.3 Exercise
+1. Problem: Header has 2 columns but the data rows have 3 values 
+What happens: readr reads the extra values into a column named ...3, you'll get a tibble with 3 columnts.
+2. Problem: Header has 3 columns, but the first data row has only 2 values, and the second has 4 values.
+What happens:
+Missing values get filled with NA.
+Extra values get stored in a new column ...4.
+You’ll see a tibble with 4 columns: a, b, c, and ...4.
+3. Problem: Unclosed quote — "1 starts a string but is never terminated.
+What happens: Parsing fails with an error like "EOF within quoted string". The code doesn’t return a tibble.
+4. Problem: Second data row has text "a","b" where numbers are expected.
+What happens: read_csv() will still parse it, but it will warn about a parsing issue. The column type may be promoted to character, or the mismatched row will get NA if forced to numeric.
+5. Problem: Uses semicolons (;) instead of commas (,).
+What happens: Since read_csv() expects commas, the whole line is treated as one column. You get a tibble with a single column named "a;b" and one row "1;3".
+Fix: use read_csv2() (which defaults to ; separator), or specify read_csv("a;b\n1;3", delim = ";").
+
+4.8 Relational Data
+```{r}
+library(tidyverse)
+install.packages("nycflights13")
+library(nycflights13)
+
+```
+```{r}
+airlines
+```
+```{r}
+airports
+```
+```{r}
+planes
+```
+```{r}
+weather
+```
+```{r}
+planes %>% 
+  count(tailnum) %>% 
+  filter(n > 1)
+#> # A tibble: 0 × 2
+#> # ... with 2 variables: tailnum <chr>, n <int>
+
+weather %>% 
+  count(year, month, day, hour, origin) %>% 
+  filter(n > 1)
+#> # A tibble: 3 × 6
+#>    year month   day  hour origin     n
+#>   <int> <int> <int> <int> <chr>  <int>
+#> 1  2013    11     3     1 EWR        2
+#> 2  2013    11     3     1 JFK        2
+#> 3  2013    11     3     1 LGA        2
+flights %>% 
+  count(year, month, day, flight) %>% 
+  filter(n > 1)
+#> # A tibble: 29,768 × 5
+#>    year month   day flight     n
+#>   <int> <int> <int>  <int> <int>
+#> 1  2013     1     1      1     2
+#> 2  2013     1     1      3     2
+#> 3  2013     1     1      4     2
+#> 4  2013     1     1     11     3
+#> 5  2013     1     1     15     2
+#> 6  2013     1     1     21     2
+#> # ... with 29,762 more rows
+
+flights %>% 
+  count(year, month, day, tailnum) %>% 
+  filter(n > 1)
+#> # A tibble: 64,928 × 5
+
+```
+```{r}
+flights2 <- flights %>% 
+  select(year:day, hour, origin, dest, tailnum, carrier)
+
+flights2 %>%
+  select(-origin, -dest) %>% 
+  left_join(airlines, by = "carrier")
+
+flights2 %>%
+  select(-origin, -dest) %>% 
+  mutate(name = airlines$name[match(carrier, airlines$carrier)])
+
+```
+```{r}
+x <- tribble(
+  ~key, ~val_x,
+     1, "x1",
+     2, "x2",
+     3, "x3"
+)
+y <- tribble(
+  ~key, ~val_y,
+     1, "y1",
+     2, "y2",
+     4, "y3"
+)
+
+x %>% 
+  inner_join(y, by = "key")
+
+
+```
+```{r}
+x <- tribble(
+  ~key, ~val_x,
+     1, "x1",
+     2, "x2",
+     2, "x3",
+     1, "x4"
+)
+y <- tribble(
+  ~key, ~val_y,
+     1, "y1",
+     2, "y2"
+)
+left_join(x, y, by = "key")
+
+```
+```{r}
+x <- tribble(
+  ~key, ~val_x,
+     1, "x1",
+     2, "x2",
+     2, "x3",
+     3, "x4"
+)
+y <- tribble(
+  ~key, ~val_y,
+     1, "y1",
+     2, "y2",
+     2, "y3",
+     3, "y4"
+)
+left_join(x, y, by = "key")
+
+```
+```{r}
+flights2 %>% 
+  left_join(weather)
+```
 
 
