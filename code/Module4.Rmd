@@ -1108,5 +1108,89 @@ left_join(x, y, by = "key")
 flights2 %>% 
   left_join(weather)
 ```
+------ Workshop 4-------
+```{r}
+install.packages("sf") 
+install.packages("terra")
+install.packages("tmap")
 
+library(tidyverse)
+library(sf)
+library (terra) 
+library(tmap) 
+```
+
+```{r}
+library(readr)
+dat <- read_csv("copepods_raw.csv")
+dat
+```
+
+
+5.7.1 Check coordinates
+```{r}
+library(ggplot2)
+ggplot(dat) + 
+  aes(x = longitude, y = latitude, color = richness_raw) +
+  geom_point()
+```
+```{r}
+ggplot(dat, aes(x = latitude, y = richness_raw)) + 
+  stat_smooth() + 
+  geom_point()
+
+
+```
+5.8
+```{r}
+library(sf)
+```
+
+```{r}
+sdat <- st_as_sf(dat, coords = c("longitude", "latitude"), 
+                 crs = 4326)
+```
+5.9
+```{r}
+crs4326 <- st_crs(4326)
+crs4326 # look at the whole CRS
+crs4326$Name
+
+```
+5.10
+```{r}
+sdat
+
+plot(sdat["richness_raw"])
+
+
+```
+5.12 Thematic Maps
+```{r}
+library(tmap)
+```
+
+```{r}
+names(sdat)
+
+str(sdat$richness_raw)
+summary(sdat$richness_raw)
+
+
+tm_shape(sdat) + 
+  tm_dots(col = "richness_raw")
+
+tm_shape(sdat) +
+  tm_dots(col = "richness_raw", palette = "viridis", style = "quantile", size = 0.5)
+
+```
+```{r}
+aus <- st_read("Aussie.shp")
+
+
+
+
+
+
+```
 
